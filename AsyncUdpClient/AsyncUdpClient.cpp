@@ -13,48 +13,63 @@ using namespace invisCom;
 int main(int argc, char* argv[])
 {
     // listener 224.0.0.1 1034 192.168.1.143
-    if (argc < 5) {
-        printf("AsyncUdpClient.exe <localClientAddress> <localClientPort> <remoteServerAddress> <remoteServerPort> <\n");
-        printf("e.g.: `AsyncUdpClient.exe 192.168.1.144 1034 192.168.1.58 1035`\n");
-        printf(" use wild card to listen in all interfaces:%s\n", DEFAULT_INTERFACE_NAME);
-        printf("e.g.: `AsyncUdpClient.exe 0.0.0.0 1034 192.168.1.58 1035`\n");
+    if (argc < 6) {
+        printf("AsyncUdpClient.exe <localReceivingAddress> <localReceivingPort> unicast/multicast <remoteSenderAddress> <remoteSenderPort> <localSendingInterfaceAddress>\n");
+        printf("imagine you are a client at your local ip 192.169.1.58 and your server was in 192.169.1.144\n");
+        printf("e.g.: `AsyncUdpClient.exe 192.168.1.58 1035 unicast 192.168.1.58 1035`\n");
+        printf(" send multicast commands like this:\n");
+        printf("e.g.: `AsyncUdpClient.exe 192.168.1.58 1034 multicast 224.0.0.1 1035 192.168.1.58`\n");
         return 1;
     }
 
-    BroadcastType broadcastType = BroadcastType::eUnicast;
 
-    const char* localClientAddress = DEFAULT_SERVER_NAME;
-    localClientAddress = argv[1];
+    const char* localReceivingAddress = DEFAULT_SERVER_NAME;
+    localReceivingAddress = argv[1];
 
-    int localClientPort = DEFAULT_SERVER_PORT;
-    localClientPort= atoi(argv[2]); // 0 if error, which is an invalid destinationPort
+    int localReceivingPort = DEFAULT_SERVER_PORT;
+    localReceivingPort= atoi(argv[2]); // 0 if error, which is an invalid destinationPort
 
-    const char* remoteServerAddress = DEFAULT_SERVER_NAME;
-    remoteServerAddress = argv[3];
+    BroadcastType receiverBroadcastType = BroadcastType::eUnicast;
+    receiverBroadcastType = case_insensitive_equals(std::string(argv[3]), "unicast") ? BroadcastType::eUnicast : BroadcastType::eMulticast;
 
-    int remoteServerPort = DEFAULT_SERVER_PORT;
-    remoteServerPort= atoi(argv[4]); // 0 if error, which is an invalid destinationPort
+    const char* remoteSenderAddress = DEFAULT_SERVER_NAME;
+    remoteSenderAddress = argv[4];
+
+    int remoteSenderPort = DEFAULT_SERVER_PORT;
+    remoteSenderPort= atoi(argv[5]); // 0 if error, which is an invalid destinationPort
+
+    const char* localSendingInterfaceAddress = DEFAULT_INTERFACE_NAME;
+    if (argc > 6)
+        localSendingInterfaceAddress = argv[6];
 
 
     if (!initializeInvisCom()) {
         return 1;
     }
 
-
-	printf("client sending commands to \ndestination\t'%s:%d'\n", remoteServerAddress, localClientPort);
-	SenderSocketInfo senderSocketInfo;
-	if (!unicastSenderUDPsocket(senderSocketInfo, remoteServerAddress, remoteServerPort)) {
-        return 1;
+	invisCom::SocketInfo senderSocketInfo;
+    if (receiverBroadcastType == BroadcastType::eUnicast) {
+        printf("client sending unicast commands to \ndestination\t'%s:%d'\n", remoteSenderAddress, remoteSenderPort);
+        if (!unicastSenderUDPsocket(senderSocketInfo, remoteSenderAddress, remoteSenderPort))
+            return 1;
     }
-    SenderSocketInfo receiverSocketInfo;
-	printf("client receiving responses at \ndestination\t'%s:%d'\n", localClientAddress, localClientPort);
-    if (!unicastReceiverUDPsocket(receiverSocketInfo, localClientAddress, localClientPort)) {
+    else {
+        printf("client sending multicast commands to\ndestination\t'%s:%d'\noutput interface\t'%s'\n", remoteSenderAddress, remoteSenderPort, localSendingInterfaceAddress);
+        if (!multicastSenderUDPsocket(senderSocketInfo, remoteSenderAddress, remoteSenderPort, localSendingInterfaceAddress))
+            return 1;
+    }
+
+
+
+    invisCom::SocketInfo receiverSocketInfo;
+	printf("client receiving responses at \ndestination\t'%s:%d'\n", localReceivingAddress, localReceivingPort);
+    if (!unicastReceiverUDPsocket(receiverSocketInfo, localReceivingAddress, localReceivingPort)) {
 		return 1;
     }
 
 
     std::atomic<bool> done = false;
-    std::atomic<float> value = 33;
+    std::atomic<float> value = 2;
     std::atomic<float> response = 0;
 
     auto handleInput = [](const std::vector<char> buffer)
@@ -104,10 +119,14 @@ int main(int argc, char* argv[])
     {
         bool done = isKeyPressed(VK_ESCAPE);
         printf("\rsending val:%0.5f receiving:%0.5f", value.load(), response.load());
+        sleepThisThreadFor(0.1f);
     }
-    
+
+    // block until coms thread done
     clientFuture.get();
 
     destroyInvisCom();
+
+    return 0;
 }
 

@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     do
     {
 
-		SenderSocketInfo socketInfo;
+		invisCom:SocketInfo socketInfo;
 
         if (broadcastType == BroadcastType::eUnicast) {
 			printf("unicast listener for packets with\ndestination\t'%s:%d'\n", destinationAddress, destinationPort);
@@ -64,13 +64,12 @@ int main(int argc, char* argv[])
             if (!multicastReceiverUDPsocket(socketInfo, destinationAddress, destinationPort, interfaceAddress))
 				break;
         }
-
+		printf("listening ... \n");
         do
         {
             std::vector<char>  buffer;
             buffer.resize(DEFAULT_PACKAGE_SIZE);
 
-			printf("listening ... \n");
             sockaddr_in outSenderAddress;
             int receivedSize = 0;
             if (receiveFromSelect(socketInfo, buffer, outSenderAddress)) {
@@ -82,6 +81,7 @@ int main(int argc, char* argv[])
                     outHexa = outHexa + " ... ";
                 }
                 printf("hexa:[%s] from %s:%d\n", outHexa.c_str(), inet_ntoa(outSenderAddress.sin_addr), ntohs(outSenderAddress.sin_port));
+				printf("listening ... \n");
             }
         } while (true);
 

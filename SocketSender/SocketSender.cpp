@@ -27,9 +27,9 @@ int main(int argc, char* argv[])
         printf("description: this process will send the message [%s] %d times through sockets to its destination\n", message, tryOuts);
         return 1;
     }
-    if (!case_insensitive_equals(std::string(argv[1]), "multicast") && case_insensitive_equals(std::string(argv[1]), "unicast"))
+    if (!(case_insensitive_equals(std::string(argv[1]), "multicast") || case_insensitive_equals(std::string(argv[1]), "unicast")))
     {
-        fprintf(stderr, "error parameter 1: should be either 'multicast' or 'unicast'");
+        fprintf(stderr, "error parameter 1: should be either 'multicast' or 'unicast' got %s", std::string(argv[1]).c_str());
         return 1;
     }
 
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
     do
     {
-		SenderSocketInfo socketInfo;
+		invisCom::SocketInfo socketInfo;
         if (broadcastType == BroadcastType::eUnicast) {
             if (!unicastSenderUDPsocket(socketInfo, destinationAddress, destinationPort))
                 break;
