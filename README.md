@@ -1,6 +1,8 @@
 # WinSock UDP Connectionless Library
 
-This is an quick prototype of a library in use at one of my serious projects. It is a simple library for connecionless UDP datagrams (just open your socket and you are good to go) communications. Great for LAN environments where simplicity and speed are paramount.
+Warning: this is an quick prototype and should be used as an example only for research purposes.
+
+This is a simple Socket Communications Library for connecionless UDP datagrams (just open your socket and you are good to go) communications. Great for LAN environments where simplicity and speed are paramount.
 You need a reliable connection (UDP gives no garantees as opposed to TCP) and you need to know the IPs of each machine to connect to in the network. 
 Sockets used with connectionless datagram services need not be connected before they are used, but connecting sockets makes it possible to transfer data without specifying the destination each time.
 For more information and to grasp the idea please check: https://www.ibm.com/docs/en/i/7.4.0?topic=socket-example-connectionless-client
